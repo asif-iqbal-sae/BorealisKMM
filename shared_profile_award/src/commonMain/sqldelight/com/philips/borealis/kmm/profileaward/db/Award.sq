@@ -1,0 +1,61 @@
+CREATE TABLE Award (
+    uuid TEXT NOT NULL PRIMARY KEY,
+    awardDescription TEXT,
+    badge TEXT,
+    consumable INTEGER,
+    criteria TEXT,
+    inventoryAwarded INTEGER,
+    name TEXT,
+    trackingId TEXT,
+    type TEXT,
+    awardValue INTEGER
+);
+
+insertOrReplace:
+INSERT OR REPLACE INTO Award (
+    uuid,
+    awardDescription,
+    badge,
+    consumable,
+    criteria,
+    inventoryAwarded,
+    name,
+    trackingId,
+    type,
+    awardValue
+) VALUES (
+    :uuid,
+    :awardDescription,
+    :badge,
+    :consumable,
+    :criteria,
+    :inventoryAwarded,
+    :name,
+    :trackingId,
+    :type,
+    :awardValue
+);
+
+selectAll:
+SELECT * FROM Award;
+
+selectByUuid:
+SELECT * FROM Award
+WHERE uuid = :uuid;
+
+selectByType:
+SELECT * FROM Award
+WHERE type = :type;
+
+selectLevelMilestoneAwards:
+SELECT * FROM Award
+WHERE type = 'level'
+  AND criteria = 'milestone'
+ORDER BY awardValue ASC;
+
+deleteByUuid:
+DELETE FROM Award
+WHERE uuid = :uuid;
+
+deleteAll:
+DELETE FROM Award;

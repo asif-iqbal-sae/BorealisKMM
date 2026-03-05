@@ -1,1 +1,6 @@
 *.aar\n*.framework\nbuild/\n.gradle/\n.DS_Store\n
+build/
+.gradle/
+.kotlin/
+*.class
+local.properties

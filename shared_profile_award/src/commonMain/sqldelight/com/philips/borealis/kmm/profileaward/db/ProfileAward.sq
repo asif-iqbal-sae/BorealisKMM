@@ -1,0 +1,153 @@
+CREATE TABLE ProfileAward (
+    uuid TEXT NOT NULL,
+    award TEXT,
+    dateTimeAwarded TEXT,
+    dateTimeAwardedLocal TEXT,
+    notified INTEGER NOT NULL DEFAULT 0,
+    profileUuid TEXT NOT NULL,
+    awardLevelValue INTEGER NOT NULL DEFAULT 0,
+    momentId TEXT NOT NULL DEFAULT '',
+    momentVersion INTEGER NOT NULL DEFAULT 0,
+    momentCreatedDate TEXT NOT NULL DEFAULT '',
+    momentLastModifiedDate TEXT NOT NULL DEFAULT '',
+    syncState INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (uuid, profileUuid),
+    FOREIGN KEY (profileUuid) REFERENCES Profile(uuid) ON DELETE CASCADE
+);
+
+insertOrReplace:
+INSERT OR REPLACE INTO ProfileAward (
+    uuid,
+    award,
+    dateTimeAwarded,
+    dateTimeAwardedLocal,
+    notified,
+    profileUuid,
+    awardLevelValue,
+    momentId,
+    momentVersion,
+    momentCreatedDate,
+    momentLastModifiedDate,
+    syncState
+) VALUES (
+    :uuid,
+    :award,
+    :dateTimeAwarded,
+    :dateTimeAwardedLocal,
+    :notified,
+    :profileUuid,
+    :awardLevelValue,
+    :momentId,
+    :momentVersion,
+    :momentCreatedDate,
+    :momentLastModifiedDate,
+    :syncState
+);
+
+selectByProfileUuid:
+SELECT * FROM ProfileAward
+WHERE profileUuid = :profileUuid;
+
+selectByUuidAndProfileUuid:
+SELECT * FROM ProfileAward
+WHERE uuid = :uuid
+  AND profileUuid = :profileUuid;
+
+selectForTypeByProfile:
+SELECT
+    pa.uuid,
+    pa.award,
+    pa.dateTimeAwarded,
+    pa.dateTimeAwardedLocal,
+    pa.notified,
+    pa.profileUuid,
+    pa.awardLevelValue,
+    pa.momentId,
+    pa.momentVersion,
+    pa.momentCreatedDate,
+    pa.momentLastModifiedDate,
+    pa.syncState,
+    a.awardDescription,
+    a.badge,
+    a.consumable,
+    a.criteria,
+    a.inventoryAwarded,
+    a.name AS awardName,
+    a.trackingId,
+    a.type,
+    a.awardValue
+FROM ProfileAward pa
+INNER JOIN Award a ON pa.award = a.uuid
+WHERE pa.profileUuid = :profileUuid
+  AND a.type = :awardType;
+
+selectLevelAwardsByProfile:
+SELECT
+    pa.uuid,
+    pa.award,
+    pa.dateTimeAwarded,
+    pa.dateTimeAwardedLocal,
+    pa.notified,
+    pa.profileUuid,
+    pa.awardLevelValue,
+    pa.momentId,
+    pa.momentVersion,
+    pa.momentCreatedDate,
+    pa.momentLastModifiedDate,
+    pa.syncState,
+    a.awardDescription,
+    a.badge,
+    a.consumable,
+    a.criteria,
+    a.inventoryAwarded,
+    a.name AS awardName,
+    a.trackingId,
+    a.type,
+    a.awardValue
+FROM ProfileAward pa
+INNER JOIN Award a ON pa.award = a.uuid
+WHERE pa.profileUuid = :profileUuid
+  AND a.type = 'level'
+  AND a.criteria = 'milestone'
+ORDER BY a.awardValue ASC;
+
+selectUnsynced:
+SELECT * FROM ProfileAward
+WHERE syncState != 1;
+
+selectUnnotifiedByProfile:
+SELECT * FROM ProfileAward
+WHERE profileUuid = :profileUuid
+  AND notified = 0;
+
+updateMomentFields:
+UPDATE ProfileAward
+SET
+    momentId = :momentId,
+    momentVersion = :momentVersion,
+    momentCreatedDate = :momentCreatedDate,
+    momentLastModifiedDate = :momentLastModifiedDate
+WHERE uuid = :uuid
+  AND profileUuid = :profileUuid;
+
+updateSyncState:
+UPDATE ProfileAward
+SET syncState = :syncState
+WHERE uuid = :uuid
+  AND profileUuid = :profileUuid;
+
+countByProfile:
+SELECT COUNT(*) FROM ProfileAward
+WHERE profileUuid = :profileUuid;
+
+deleteByUuidAndProfileUuid:
+DELETE FROM ProfileAward
+WHERE uuid = :uuid
+  AND profileUuid = :profileUuid;
+
+deleteByProfileUuid:
+DELETE FROM ProfileAward
+WHERE profileUuid = :profileUuid;
+
+deleteAll:
+DELETE FROM ProfileAward;

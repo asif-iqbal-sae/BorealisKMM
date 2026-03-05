@@ -1,0 +1,3 @@
+CREATE TABLE Profile (
+    uuid TEXT NOT NULL PRIMARY KEY
+);
