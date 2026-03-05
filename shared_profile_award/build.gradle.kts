@@ -4,6 +4,7 @@ plugins {
     id("app.cash.sqldelight")
     id("org.jetbrains.kotlin.native.cocoapods")
     id("com.android.library")
+    `maven-publish`
 }
 
 android {
@@ -105,5 +106,34 @@ sqldelight {
         create("BorealisProfileAwardDb") {
             packageName.set("com.philips.borealis.kmm.profileaward.db")
         }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Publishing to GitHub Packages
+// Credentials are read from local.properties (local dev) or env vars (CI)
+// ---------------------------------------------------------------------------
+val localProps = java.util.Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) load(f.inputStream())
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/asif-iqbal-sae/BorealisKMM")
+            credentials {
+                username = localProps.getProperty("github.actor")
+                    ?: System.getenv("GITHUB_ACTOR")
+                password = localProps.getProperty("github.token")
+                    ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications.withType<MavenPublication> {
+        groupId = "com.philips.borealis"
+        artifactId = "shared-profile-award-${name.lowercase()}"
+        version = "1.0.0"
     }
 }
