@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     kotlin("multiplatform")
     kotlin("plugin.serialization")
@@ -113,9 +115,9 @@ sqldelight {
 // Publishing to GitHub Packages
 // Credentials are read from local.properties (local dev) or env vars (CI)
 // ---------------------------------------------------------------------------
-val localProps = java.util.Properties().apply {
+val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
-    if (f.exists()) load(f.inputStream())
+    if (f.exists()) f.inputStream().use { stream -> load(stream) }
 }
 
 publishing {
