@@ -45,21 +45,25 @@ kotlin {
             baseName = "shared_profile_award"
             isStatic = true
         }
-        podfile = project.file("../../BorealisiOS/orlando-native/Podfile")
+        // podfile reference removed intentionally — prevents automatic `pod install`
+        // during Android Gradle sync (which fails due to private Philips spec repo).
+        // For iOS integration, run: cd BorealisKMM && ./gradlew :shared_profile_award:podInstall
+        // from a machine with access to the Philips CocoaPods spec repo, or add the pod
+        // manually to the iOS Podfile using: pod 'shared_profile_award', :path => '../BorealisKMM/shared_profile_award'
     }
 
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.1")
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
+                implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
             }
         }
 
         val androidMain by getting {
             dependencies {
-                implementation("app.cash.sqldelight:android-driver:2.1.0")
+                implementation("app.cash.sqldelight:android-driver:2.0.2")
             }
         }
 
@@ -72,14 +76,14 @@ kotlin {
             iosArm64Main.dependsOn(this)
             iosSimulatorArm64Main.dependsOn(this)
             dependencies {
-                implementation("app.cash.sqldelight:native-driver:2.1.0")
+                implementation("app.cash.sqldelight:native-driver:2.0.2")
             }
         }
 
         val jvmMain by getting {
             dependsOn(commonMain)
             dependencies {
-                implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
             }
         }
 
@@ -91,13 +95,13 @@ kotlin {
 
         val jvmTest by getting {
             dependencies {
-                implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
             }
         }
 
         val androidUnitTest by getting {
             dependencies {
-                implementation("app.cash.sqldelight:sqlite-driver:2.1.0")
+                implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
             }
         }
     }
