@@ -1,10 +1,10 @@
 Pod::Spec.new do |spec|
     spec.name                     = 'shared_profile_award'
     spec.version                  = '1.0.0'
-    spec.homepage                 = ''
+    spec.homepage                 = 'https://github.com/philips'
     spec.source                   = { :http=> ''}
-    spec.authors                  = ''
-    spec.license                  = ''
+    spec.authors                  = 'Philips'
+    spec.license                  = { :type => 'Proprietary' }
     spec.summary                  = 'KMM ProfileAward business logic'
     spec.vendored_frameworks      = 'build/cocoapods/framework/shared_profile_award.framework'
     spec.libraries                = 'c++'
