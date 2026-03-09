@@ -1,3 +1,6 @@
 CREATE TABLE Profile (
     uuid TEXT NOT NULL PRIMARY KEY
 );
+
+insertOrReplace:
+INSERT OR REPLACE INTO Profile (uuid) VALUES (:uuid);

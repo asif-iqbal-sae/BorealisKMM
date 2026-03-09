@@ -93,6 +93,19 @@ kotlin {
             }
         }
 
+        val iosX64Test by getting
+        val iosArm64Test by getting
+        val iosSimulatorArm64Test by getting
+        val iosTest by creating {
+            dependsOn(commonTest)
+            iosX64Test.dependsOn(this)
+            iosArm64Test.dependsOn(this)
+            iosSimulatorArm64Test.dependsOn(this)
+            dependencies {
+                implementation("app.cash.sqldelight:native-driver:2.0.2")
+            }
+        }
+
         val jvmTest by getting {
             dependencies {
                 implementation("app.cash.sqldelight:sqlite-driver:2.0.2")
@@ -112,6 +125,13 @@ sqldelight {
         create("BorealisProfileAwardDb") {
             packageName.set("com.philips.borealis.kmm.profileaward.db")
         }
+    }
+}
+
+// Show println() output from tests in the console
+tasks.withType<Test> {
+    testLogging {
+        showStandardStreams = true
     }
 }
 

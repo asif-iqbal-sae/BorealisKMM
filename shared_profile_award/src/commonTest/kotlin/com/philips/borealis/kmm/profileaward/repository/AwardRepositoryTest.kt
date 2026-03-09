@@ -1,13 +1,14 @@
 package com.philips.borealis.kmm.profileaward.repository
 
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.philips.borealis.kmm.profileaward.db.BorealisProfileAwardDb
 import com.philips.borealis.kmm.profileaward.platform.AwardJsonProvider
+import com.philips.borealis.kmm.profileaward.util.createTestSqlDriver
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class AwardRepositoryTest {
 
@@ -16,7 +17,7 @@ class AwardRepositoryTest {
 
     @BeforeTest
     fun setup() {
-        val driver = JdbcSqliteDriver(JdbcSqliteDriver.IN_MEMORY)
+        val driver = createTestSqlDriver()
         BorealisProfileAwardDb.Schema.create(driver)
         database = BorealisProfileAwardDb(driver)
         awardRepository = AwardRepository(database, FakeAwardJsonProvider())
@@ -79,7 +80,7 @@ class AwardRepositoryTest {
         val levelAwards = repo.getAwardsByType("level")
 
         assertEquals(2, levelAwards.size)
-        assert(levelAwards.all { it.type == "level" })
+        assertTrue(levelAwards.all { it.type == "level" })
     }
 
     @Test
