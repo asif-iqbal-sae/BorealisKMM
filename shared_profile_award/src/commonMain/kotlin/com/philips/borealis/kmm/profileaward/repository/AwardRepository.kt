@@ -4,7 +4,11 @@ import com.philips.borealis.kmm.profileaward.db.BorealisProfileAwardDb
 import com.philips.borealis.kmm.profileaward.model.Award
 import com.philips.borealis.kmm.profileaward.platform.AwardJsonProvider
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.intOrNull
 
 class AwardRepository(
     private val database: BorealisProfileAwardDb,
@@ -15,7 +19,7 @@ class AwardRepository(
 
     fun loadAwardsFromJson(): Int {
         val jsonString = jsonProvider.loadAwardsJson() ?: return 0
-        val awards = json.decodeFromString<List<Award>>(jsonString)
+        val awards = parseAwardsJson(jsonString)
         awards.forEach { award ->
             database.awardQueries.insertOrReplace(
                 uuid = award.uuid,
@@ -31,6 +35,33 @@ class AwardRepository(
             )
         }
         return awards.size
+    }
+
+    /**
+     * The awards_uuids.json file uses a map format:
+     *   { "uuid1": { "type": "...", "name": "..." }, "uuid2": { ... } }
+     * Convert each entry into an Award with the map key as the uuid.
+     */
+    private fun parseAwardsJson(jsonString: String): List<Award> {
+        val root = json.parseToJsonElement(jsonString)
+        return when (root) {
+            is JsonObject -> root.entries.map { (uuid, element) ->
+                val obj = element.jsonObject
+                Award(
+                    uuid = uuid,
+                    awardDescription = obj["awardDescription"]?.jsonPrimitive?.content,
+                    badge = obj["badge"]?.jsonPrimitive?.content,
+                    consumable = obj["consumable"]?.jsonPrimitive?.booleanOrNull,
+                    criteria = obj["criteria"]?.jsonPrimitive?.content,
+                    inventoryAwarded = obj["inventoryAwarded"]?.jsonPrimitive?.intOrNull,
+                    name = obj["name"]?.jsonPrimitive?.content,
+                    trackingId = obj["trackingId"]?.jsonPrimitive?.content,
+                    type = obj["type"]?.jsonPrimitive?.content,
+                    value = obj["value"]?.jsonPrimitive?.intOrNull
+                )
+            }
+            else -> json.decodeFromString<List<Award>>(jsonString)
+        }
     }
 
     fun getAllAwards(): List<Award> =
