@@ -91,23 +91,36 @@ class ProfileAwardRepository(
         var count = 0
         database.profileAwardQueries.transaction {
             awards.forEach { incoming ->
-                val existing = database.profileAwardQueries
-                    .selectByUuidAndProfileUuid(incoming.uuid, profileUuid)
-                    .executeAsOneOrNull()
-                    ?.let { rowToProfileAward(it) }
+                // Core Data deduplicates by award (award-catalog UUID) + profileUuid,
+                // NOT by uuid (profile-award instance UUID). Mirror that behaviour to
+                // prevent duplicates when the same award arrives with a different uuid.
+                val existingByAward = incoming.award?.let { awardUuid ->
+                    database.profileAwardQueries
+                        .selectByAwardAndProfileUuid(awardUuid, profileUuid)
+                        .executeAsOneOrNull()
+                        ?.let { rowToProfileAward(it) }
+                }
 
-                if (existing != null) {
-                    if (!isSameAward(existing, incoming)) {
+                if (existingByAward != null) {
+                    // If the incoming uuid differs from the existing one, delete the old
+                    // row first so the INSERT OR REPLACE below uses the new uuid as PK.
+                    if (existingByAward.uuid != incoming.uuid) {
+                        database.profileAwardQueries.deleteByUuidAndProfileUuid(
+                            existingByAward.uuid, profileUuid
+                        )
+                    }
+
+                    if (!isSameAward(existingByAward, incoming)) {
                         // Update, preserving any moment fields already set
-                        val preservedMomentId = existing.momentId?.takeIf { it.isNotEmpty() }
+                        val preservedMomentId = existingByAward.momentId?.takeIf { it.isNotEmpty() }
                             ?: incoming.momentId ?: ""
-                        val preservedMomentVersion = if (!existing.momentId.isNullOrEmpty())
-                            existing.momentVersion else incoming.momentVersion
-                        val preservedMomentCreatedDate = existing.momentCreatedDate
+                        val preservedMomentVersion = if (!existingByAward.momentId.isNullOrEmpty())
+                            existingByAward.momentVersion else incoming.momentVersion
+                        val preservedMomentCreatedDate = existingByAward.momentCreatedDate
                             ?.takeIf { it.isNotEmpty() }
                             ?: incoming.momentCreatedDate ?: ""
                         val preservedMomentLastModifiedDate =
-                            incoming.momentLastModifiedDate ?: existing.momentLastModifiedDate
+                            incoming.momentLastModifiedDate ?: existingByAward.momentLastModifiedDate
 
                         database.profileAwardQueries.insertOrReplace(
                             uuid = incoming.uuid,
@@ -238,10 +251,13 @@ class ProfileAwardRepository(
             }
             seenTimestamps[ts] = dupCount + 1
 
-            // Collect consumable types for inventory merge
-            val awardType = awardRepository.getAwardById(award.award ?: "")?.type
+            // Collect consumable types for inventory merge.
+            // Use the full UUID→type lookup (awards_uuids.json) since the Award
+            // DB table only contains display awards, not inventory items.
+            val awardUuid = award.award ?: ""
+            val awardType = awardRepository.awardTypeLookup[awardUuid]
+                ?: awardRepository.getAwardById(awardUuid)?.type
             if (awardType != null && awardType in CONSUMABLE_AWARD_TYPES) {
-                val awardUuid = award.award ?: ""
                 val existing = chestBoxItems[awardUuid]
                 if (existing != null) {
                     chestBoxItems[awardUuid] = existing.copy(
@@ -280,10 +296,20 @@ class ProfileAwardRepository(
             .mapNotNull { it.award }
             .toSet()
 
-        val oneTimeAwardUuids = awardRepository.getAllAwards()
-            .filter { it.type in ONE_TIME_AWARD_TYPES }
-            .map { it.uuid }
-            .toSet()
+        // Use the full UUID→type lookup (awards_uuids.json) to identify one-time awards.
+        // The DB catalog (awards.json) only has display awards; inventory-type awards
+        // like wearable/habitat/durable-earned are in the lookup but not in the DB.
+        val fullLookup = awardRepository.awardTypeLookup
+        val oneTimeAwardUuids = buildSet {
+            // From the DB catalog
+            awardRepository.getAllAwards()
+                .filter { it.type in ONE_TIME_AWARD_TYPES }
+                .forEach { add(it.uuid) }
+            // From the full UUID→type lookup
+            fullLookup.entries
+                .filter { it.value in ONE_TIME_AWARD_TYPES }
+                .forEach { add(it.key) }
+        }
 
         val alreadyOwnedOneTimeUuids = existingAwardUuids.intersect(oneTimeAwardUuids)
 

@@ -17,6 +17,27 @@ class AwardRepository(
 
     private val json = Json { ignoreUnknownKeys = true }
 
+    /**
+     * Lazy-loaded UUID→type lookup from awards_uuids.json (the full 363-entry file).
+     * Used only for classifying award types during de-duplication, NOT stored in DB.
+     */
+    val awardTypeLookup: Map<String, String> by lazy {
+        val lookupJson = jsonProvider.loadAwardUuidsLookupJson() ?: return@lazy emptyMap()
+        try {
+            val root = json.parseToJsonElement(lookupJson)
+            if (root is JsonObject) {
+                root.entries.mapNotNull { (uuid, element) ->
+                    val type = element.jsonObject["type"]?.jsonPrimitive?.content
+                    if (type != null) uuid to type else null
+                }.toMap()
+            } else {
+                emptyMap()
+            }
+        } catch (_: Exception) {
+            emptyMap()
+        }
+    }
+
     fun loadAwardsFromJson(): Int {
         val jsonString = jsonProvider.loadAwardsJson() ?: return 0
         val awards = parseAwardsJson(jsonString)

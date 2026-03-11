@@ -53,6 +53,14 @@ SELECT * FROM ProfileAward
 WHERE uuid = :uuid
   AND profileUuid = :profileUuid;
 
+-- Core Data deduplicates by award (award UUID) + profile, not by uuid (profile-award UUID).
+-- This query mirrors that behaviour to prevent duplicate profile awards for the same award.
+selectByAwardAndProfileUuid:
+SELECT * FROM ProfileAward
+WHERE award = :award
+  AND profileUuid = :profileUuid
+LIMIT 1;
+
 selectForTypeByProfile:
 SELECT
     pa.uuid,
